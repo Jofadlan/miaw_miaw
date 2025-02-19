@@ -20,7 +20,7 @@ class CreateTransactionsTable extends Migration
             $table->string('check_in');
             $table->string('many_room');
             $table->string('check_out');
-            $table->string('status');
+            $table->string('status')->default('menunggu pembayaran');
             $table->timestamps();
         });
     }

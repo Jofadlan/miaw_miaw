@@ -7,7 +7,7 @@
 				<div class="container">
 					<div class="banner_content text-center">
 						<h6>Away from monotonous life</h6>
-						<h2>Hotel Hebat</h2>
+						<h2>Miaw Miaw Hotel</h2
 						<p>Hotel bersih, aman, nyaman, sehat<br> Harga yang terjangkau anda dapat menginap disini</p>
 						<a href="#types" class="btn theme_btn button_hover">Get Started</a>
 					</div>

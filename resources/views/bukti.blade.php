@@ -14,7 +14,7 @@
             <div class="card">
                 <div class="card-body">
                     <hr>
-                <h3 class="text text-primary fw-bold">HOTEL HEBAT</h3>
+                <h3 class="text text-primary fw-bold">miaw miaw</h3>
                 <h6>Payment Receipt</h6>
                 <p>Jl. Mana aja No 07 California 177854 (+1) 234-1233</p>
                 <hr>
@@ -35,7 +35,7 @@
                         <h6 class="card-subtitle mb-2 col-6">: @currency($data->room->roomType->price)</h6>
                         <hr>
                         <h6 class="card-subtitle mb-2 col-6">Total Price</h6>
-                        <h6 class="card-subtitle mb-2 col-6">: @currency($data->payment->price)</h6>
+                        <h6 class="card-subtitle mb-2 col-6">: {{ isset($data->payment) ? @currency($data->payment->price) : 'N/A' }}</h6>
                         <center>
                             <h6 class="card-subtitle mt-4 mb-2 col-12">** Thank You **</h6>
                         </center>

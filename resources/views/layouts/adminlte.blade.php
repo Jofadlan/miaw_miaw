@@ -7,8 +7,8 @@
     @hasSection ('title')
         @yield('title')
     @else
-        Hotel Hebat App
-    @endif
+    miawmiaw
+   @endif
 </title>
 
 <link rel="icon" href="{{ asset('images/logo.png')}}">

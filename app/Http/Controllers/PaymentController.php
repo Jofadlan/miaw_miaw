@@ -21,22 +21,32 @@ class PaymentController extends Controller
      */
     public function index()
     {
-        $transaction = Transaction::where('user_id', '=', Auth::user()->id, 'AND')->where('status', '=', 'waiting for payment')->latest('created_at')->first();
-        $pay = Payment::where('transaction_id', '=', $transaction->id)->first();
-        $totalHarga = $pay->price;
+        $transaction = Transaction::where('user_id', Auth::user()->id)
+            ->where('status', 'waiting for payment')
+            ->latest('created_at')
+            ->first();
+
+        if (!$transaction) {
+            return redirect()->route('bukti')->with('error', 'No transaction found.');
+        }
+
+        $pay = Payment::where('transaction_id', $transaction->id)->first();
+        $totalHarga = $pay ? $pay->price : 0;
         $jumlahPesanan = $transaction->many_room;
-        $roomId = explode(', ', $transaction->room_id);
+        $roomId = is_string($transaction->room_id) ? explode(', ', $transaction->room_id) : [$transaction->room_id];
 
         $check_in = Carbon::parse($transaction->check_in);
         $check_out = Carbon::parse($transaction->check_out);
         $totalMalam = $check_in->diffInDays($check_out);
 
         $kamar = Room::whereIn('id', $roomId)->get();
-        $dataType = RoomType::where('id', '=', $kamar[0]->type_id)->first();
-        foreach ($kamar as $val) {
-            $nomorKamar[] = $val->number;
+        if ($kamar->isEmpty()) {
+            return redirect()->route('bukti')->with('error', 'No room found.');
         }
-        $nomorKamar = implode(', ', $nomorKamar);
+
+        $dataType = RoomType::where('id', $kamar[0]->type_id)->first();
+
+        $nomorKamar = $kamar->pluck('number')->implode(', ');
 
         return view('payment.index', compact('nomorKamar', 'totalHarga', 'totalMalam', 'jumlahPesanan', 'transaction', 'dataType', 'pay'));
     }
@@ -59,7 +69,21 @@ class PaymentController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'user_id' => 'required',
+            'transaction_id' => 'required',
+            'price' => 'required',
+            'bukti' => 'required', // Add validation for bukti
+        ]);
+
+        Payment::create([
+            'user_id' => $request->user_id,
+            'transaction_id' => $request->transaction_id,
+            'price' => $request->price,
+            'bukti' => $request->bukti, // Include bukti in the insert operation
+        ]);
+
+        return redirect()->route('payments.index');
     }
 
     /**
@@ -109,9 +133,13 @@ class PaymentController extends Controller
 
     public function invoice(Request $request)
     {
-        $transactionId = Transaction::where('user_id', '=', Auth::user()->id, 'AND')->where('status', '=', 'waiting for payment')->pluck('id');
+        $transactionId = Transaction::where('user_id', Auth::user()->id)
+            ->where('status', 'waiting for payment')
+            ->pluck('id');
         $pay = Payment::whereIn('transaction_id', $transactionId)->get();
         $totalHarga = 0;
+        $idPayment = [];
+
         foreach ($pay as $val) {
             $idPayment[] = $val->id;
             $totalHarga += $val->price;
@@ -119,7 +147,6 @@ class PaymentController extends Controller
 
         $idPayment = implode(', ', $idPayment);
 
-        // dd($idPayment);
         if ($request->pay_type == "dana") {
             $pay->url = 'https://link.dana.id';
             $pay->type = 'Dana';
@@ -150,28 +177,21 @@ class PaymentController extends Controller
             $pay->nomor = 'error';
         }
 
-        // dd($pay);
         return view('payment.invoice', compact('totalHarga', 'pay', 'idPayment'));
     }
 
     public function transactionProofPrint($id)
     {
         $data = Transaction::find($id);
-        // dd($data);
         $roomId = explode(', ', $data->room_id);
 
         $kamar = Room::whereIn('id', $roomId)->get();
         $dataType = RoomType::where('id', '=', $kamar[0]->type_id)->first();
-        foreach ($kamar as $val) {
-            $nomorKamar[] = $val->number;
-        }
-        $nomorKamar = implode(', ', $nomorKamar);
+        $nomorKamar = $kamar->pluck('number')->implode(', ');
+
         $data->nomorKamar = $nomorKamar;
-        // dd($data);
-        $pdf = PDF::loadView(
-            'pdf.print-bukti',
-            ['data' => $data]
-        );
+
+        $pdf = PDF::loadView('pdf.print-bukti', ['data' => $data]);
         return $pdf->download('bukti-pembayaran.pdf');
     }
 
